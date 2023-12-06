@@ -7,6 +7,14 @@ from sklearn.preprocessing import MinMaxScaler
 import shap
 import sklearn
 from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+import pandas as pd
+import matplotlib.pyplot as plt
+import MLR
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import randint as sp_randint
 
 if __name__ == '__main__':
     import time
@@ -119,16 +127,42 @@ if __name__ == '__main__':
     # 将dataframe转换为array
     y_new = df_y.to_numpy().ravel()
 
-    # 训练RF模型
-    model= RandomForestRegressor(max_depth=5,
-                                 max_features=30,
-                                 min_samples_leaf=10,
-                                 min_samples_split=3,
-                                 n_estimators= 71)
+    # 定义超参数范围
+    rf_params = {
+        'n_estimators': sp_randint(10, 100),
+        'max_features': sp_randint(1, 64),
+        'max_depth': sp_randint(5, 50),
+        'min_samples_split': sp_randint(2, 11),
+        'min_samples_leaf': sp_randint(1, 11)
+        # ,'criterion': ['squared_error', 'absolute_error']  # Adjusted for regression
+    }
+    # Create a Random Forest Regressor object
+    clf_rf = RandomForestRegressor(random_state=0, n_jobs=-1)
+
+    # Optimize hyperparameters using Randomized Search
+    Random_search = RandomizedSearchCV(clf_rf, param_distributions=rf_params, n_iter=20, cv=5,
+                                       scoring='neg_mean_squared_error')
+    Random_search.fit(X_new, y_new)
+
+    # save best_params into Excel file
+    best_params = Random_search.best_params_
+    print("best_params:", best_params)
+
+    # convert best_params to DataFrame
+    df_best_params = pd.DataFrame([best_params])
+
+    # save into Excel file
+    excel_filename = '.\output\RF_best_params_forSHAP.xlsx'
+    df_best_params.to_excel(excel_filename, index=False)
+
+    # Make predictions
+
+
+    model = RandomForestRegressor(**best_params, random_state=0, n_jobs=-1)
     model_prediction = model.fit(X_new, y_new)
 
     # 将背景数据汇总为K个样本
-    K = 3  # 自定义K的值，可以根据需求调整
+    K = 5  # 自定义K的值，可以根据需求调整
     background_data = shap.sample(X_new, K)  # 或者使用 shap.kmeans(train_x_tensor, K)
     # 创建SHAP的KernelExplainer对象
     explainer = shap.KernelExplainer(model.predict, background_data)
@@ -155,7 +189,7 @@ if __name__ == '__main__':
 
 
     # 画 SHAP 相关依赖图
-    #['Temp', 'Prec', 'Rad', 'U10', 'Relhum']
+    #['Temp', 'Prec', 'Rad', 'U10', 'Relhum','MinTemp','MaxTemp','CO2','CroplandProp','PastureProp','NaturalProp']
     for feature_name in feature_names:
         # 绘制 SHAP 依赖图
         fig,ax= plt.subplots(figsize=(10, 8))
@@ -209,6 +243,59 @@ if __name__ == '__main__':
             fig.savefig(f'.\output\shap_interaction_{feature_name}_Relhum.png', dpi=dpi)
             plt.close(fig)
 
+            if feature_name != 'MinTemp':  # 避免与自身交互
+                fig, ax = plt.subplots(figsize=(10, 8))
+                shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='MinTemp',
+                                     feature_names=feature_names, ax=ax)
+                # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+                # fig = plt.gcf()  # 获取当前图形
+                fig.savefig(f'.\output\shap_interaction_{feature_name}_MinTemp.png', dpi=dpi)
+                plt.close(fig)
+
+            if feature_name != 'MaxTemp':  # 避免与自身交互
+                fig, ax = plt.subplots(figsize=(10, 8))
+                shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='MaxTemp',
+                                     feature_names=feature_names, ax=ax)
+                # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+                # fig = plt.gcf()  # 获取当前图形
+                fig.savefig(f'.\output\shap_interaction_{feature_name}_MaxTemp.png', dpi=dpi)
+                plt.close(fig)
+
+        if feature_name != 'CO2':  # 避免与自身交互
+            fig, ax = plt.subplots(figsize=(10, 8))
+            shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='CO2',
+                                 feature_names=feature_names, ax=ax)
+            # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+            # fig = plt.gcf()  # 获取当前图形
+            fig.savefig(f'.\output\shap_interaction_{feature_name}_CO2.png', dpi=dpi)
+            plt.close(fig)
+
+        if feature_name != 'CroplandProp':  # 避免与自身交互
+            fig, ax = plt.subplots(figsize=(10, 8))
+            shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='CroplandProp',
+                                 feature_names=feature_names, ax=ax)
+            # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+            # fig = plt.gcf()  # 获取当前图形
+            fig.savefig(f'.\output\shap_interaction_{feature_name}_CroplandProp.png', dpi=dpi)
+            plt.close(fig)
+
+        if feature_name != 'PastureProp':  # 避免与自身交互
+            fig, ax = plt.subplots(figsize=(10, 8))
+            shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='PastureProp',
+                                 feature_names=feature_names, ax=ax)
+            # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+            # fig = plt.gcf()  # 获取当前图形
+            fig.savefig(f'.\output\shap_interaction_{feature_name}_PastureProp.png', dpi=dpi)
+            plt.close(fig)
+
+        if feature_name != 'NaturalProp':  # 避免与自身交互
+            fig, ax = plt.subplots(figsize=(10, 8))
+            shap.dependence_plot(feature_name, shap_values, X_new, interaction_index='NaturalProp',
+                                 feature_names=feature_names, ax=ax)
+            # plt.title(f'SHAP Interaction Plot between {feature_name} and Relhum')
+            # fig = plt.gcf()  # 获取当前图形
+            fig.savefig(f'.\output\shap_interaction_{feature_name}_NaturalProp.png', dpi=dpi)
+            plt.close(fig)
 
 
 
