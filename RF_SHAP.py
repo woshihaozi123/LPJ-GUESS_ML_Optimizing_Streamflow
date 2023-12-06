@@ -59,7 +59,7 @@ if __name__ == '__main__':
     PastureProp_normalized = scaler.fit_transform(PastureProp.reshape(-1, 1))
     NaturalProp_normalized = scaler.fit_transform(NaturalProp.reshape(-1, 1))
 
-    LPJGUESSrunoff_normalized = scaler.fit_transform(LPJGUESSrunoff.reshape(-1, 1))
+    #LPJGUESSrunoff_normalized = scaler.fit_transform(LPJGUESSrunoff.reshape(-1, 1))
 
     ###----------------- add all variables into a datasets for uaage-----------------
     data_len = LPJGUESSrunoff.shape[0]
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     dataset = np.zeros((data_len, 8 + 6))
 
     # X variables
-    dataset[:, 0] = LPJGUESSrunoff_normalized.reshape(-1, )
+    dataset[:, 0] = LPJGUESSrunoff.reshape(-1, 1).reshape(-1, )
     dataset[:, 1] = Temp_normalized.reshape(-1, )
     dataset[:, 2] = Prec_normalized.reshape(-1, )
     dataset[:, 3] = Rad_normalized.reshape(-1, )
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # 将dataframe转换为array
     X_new = df_x.to_numpy()
 
-    feature_names_y=['Runoff']
+    feature_names_y=['LPJ-GUESS modelled runoff']
     # 创建一个dataframe,列名就是特征名
     df_y = pd.DataFrame(y, columns=feature_names_y)
 
